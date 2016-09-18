@@ -42,7 +42,7 @@ KV = '''
         transform: self.bezier
         target_text: ti.text
         font_size: dp(font_size_slider.value)
-        transition_function: 'out_elastic'
+        transition_function: transitions.text or 'linear'
 
     Label:
         text: str(label.bezier_length)
@@ -54,30 +54,47 @@ KV = '''
         width: '250dp'
         pos_hint: {'right': 1}
         orientation: 'vertical'
+        Label:
+            text: 'duration'
+
         ValueSlider:
             id: duration_slider
             value: 5
             min: 0.01
             max: 10
 
+        Label:
+            text: 'time offset'
         ValueSlider:
             id: offset_slider
             value: .1
             min: 0.01
             max: 10
 
+        Label:
+            text: 'font size'
         ValueSlider:
             id: font_size_slider
             value: 50
             min: 10
             max: 100
 
+        Label:
+            text: 'transition'
+        Spinner:
+            id: transitions
+            size_hint_y: None
+            height: '50dp'
+            values: 'linear', 'out_bounce', 'out_elastic', 'out_quad', 'out_sine'
+
         TextInput:
             id: ti
             multiline: False
-            size_hint_x: None
-            width: 250
+            size_hint_y: None
+            height: '50dp'
 
+        Label:
+            text: 'progress'
         ValueSlider:
             id: progress
             value: label._time
@@ -88,8 +105,11 @@ KV = '''
         Button:
             text: 'play!'
             on_press: label.animate()
-            size_hint_x: None
-            width: '50dp'
+            size_hint_y: None
+            height: '50dp'
+        Button:
+            text: 'export'
+            on_press: app.write_points()
 
 
 <ValueSlider@BoxLayout>:
@@ -104,7 +124,7 @@ KV = '''
         text: str(root.value)
     Slider:
         id: slider
-'''
+'''  # noqa
 
 
 def compute_bezier(points, n):
@@ -180,7 +200,6 @@ class BezierLabel(AnimLabel):
         cy = (b2[1] + b1[1]) / 2
         a = - pi / 2 + radians((Vector(b2) - Vector(b1)).angle((0, 1)))
 
-        print(progress, a)
         if not 0 <= progress < 1 + e:
             a += pi
 
@@ -264,7 +283,6 @@ class BezierTest(FloatLayout):
 
 
 class Main(App):
-
     def build(self):
         Builder.load_string(KV)
         from math import cos, sin, radians
@@ -276,6 +294,11 @@ class Main(App):
             i = radians(i)
             points.extend([x + cos(i) * l, y + sin(i) * l])
         return BezierTest(points=points)
+
+    def write_points(self):
+        with open('points.csv', 'w') as f:
+            f.write(';'.join(str(x) for x in self.root.points))
+
 
 if __name__ == '__main__':
     Main().run()
